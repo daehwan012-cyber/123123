@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>로또 번호 추천기 (6/45) - 단일 HTML</title>
+    <meta
+      name="description"
+      content="로또(6/45) 번호를 중복 없이 추천해주는 단일 HTML 파일"
+    />
+    <style>
+      :root {
+        --bg0: #070812;
+        --bg1: #0b0d1c;
+        --card: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.65);
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+        --ring: 0 0 0 4px rgba(126, 155, 255, 0.25);
+        --radius: 18px;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR",
+          Helvetica, Arial;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        color: var(--text);
+        background: radial-gradient(1200px 800px at 20% 10%, #1b2a7a 0%, transparent 60%),
+          radial-gradient(900px 700px at 80% 20%, #7a1b6a 0%, transparent 55%),
+          radial-gradient(900px 700px at 60% 90%, #0e7a6b 0%, transparent 55%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        overflow-x: hidden;
+      }
+
+      .bg {
+        position: fixed;
+        inset: 0;
+        background-image: radial-gradient(
+            1px 1px at 20px 20px,
+            rgba(255, 255, 255, 0.08),
+            transparent 40%
+          ),
+          radial-gradient(1px 1px at 70px 90px, rgba(255, 255, 255, 0.07), transparent 40%),
+          radial-gradient(
+            1px 1px at 130px 40px,
+            rgba(255, 255, 255, 0.06),
+            transparent 40%
+          );
+        background-size: 160px 160px;
+        opacity: 0.5;
+        pointer-events: none;
+        mix-blend-mode: screen;
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 18px 40px;
+        position: relative;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.2px;
+      }
+
+      .title {
+        margin: 10px 0 4px;
+        font-size: clamp(26px, 3.2vw, 36px);
+        letter-spacing: -0.02em;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .card {
+        margin-top: 16px;
+        padding: 18px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, var(--card), rgba(255, 255, 255, 0.03));
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .cardTop {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .cardTitle {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: -0.01em;
+      }
+
+      .rightActions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .btn {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 650;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        transition: transform 120ms ease, background 120ms ease, border-color 120ms ease,
+          opacity 120ms ease;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.09);
+      }
+      .btn:active {
+        transform: translateY(0px);
+      }
+      .btn:focus-visible {
+        outline: none;
+        box-shadow: var(--ring);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btnPrimary {
+        border-color: rgba(126, 155, 255, 0.55);
+        background: linear-gradient(
+          180deg,
+          rgba(126, 155, 255, 0.28),
+          rgba(126, 155, 255, 0.12)
+        );
+      }
+      .btnGhost {
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .balls {
+        min-height: 96px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.18);
+        padding: 14px;
+      }
+
+      .ballsGrid {
+        width: 100%;
+        display: grid;
+        gap: 12px;
+      }
+
+      .ballRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .ballSet {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .ballSep {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 44px;
+        color: rgba(255, 255, 255, 0.72);
+        font-weight: 800;
+        font-family: var(--mono);
+        user-select: none;
+      }
+
+      .ball {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+        user-select: none;
+      }
+
+      .ball.is0 {
+        background: radial-gradient(circle at 30% 30%, #ffe58a, #b88400);
+      }
+      .ball.is1 {
+        background: radial-gradient(circle at 30% 30%, #b5c6ff, #3b4ec8);
+      }
+      .ball.is2 {
+        background: radial-gradient(circle at 30% 30%, #ffb7b7, #c41b44);
+      }
+      .ball.is3 {
+        background: radial-gradient(circle at 30% 30%, #b9ffd8, #1b8a5a);
+      }
+      .ball.is4 {
+        background: radial-gradient(circle at 30% 30%, #e2c0ff, #5c1ab3);
+      }
+
+      .ball.ballBonus {
+        border-color: rgba(255, 255, 255, 0.28);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(255, 255, 255, 0.06);
+      }
+
+      .rowMeta {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .rowTag {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .rowCopy {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 7px 10px;
+        cursor: pointer;
+        transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+        font-size: 13px;
+      }
+      .rowCopy:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .rowCopy:focus-visible {
+        outline: none;
+        box-shadow: var(--ring);
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .details {
+        margin-top: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        overflow: clip;
+      }
+      .details > summary {
+        cursor: pointer;
+        padding: 12px 12px;
+        list-style: none;
+        background: rgba(255, 255, 255, 0.04);
+        user-select: none;
+        font-weight: 650;
+      }
+      .details > summary::-webkit-details-marker {
+        display: none;
+      }
+      .details > summary::after {
+        content: "▾";
+        float: right;
+        color: var(--muted);
+      }
+      .details[open] > summary::after {
+        content: "▴";
+      }
+
+      .options {
+        padding: 12px;
+        display: grid;
+        gap: 14px;
+        background: rgba(0, 0, 0, 0.16);
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .fieldLabel {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.86);
+        font-weight: 650;
+      }
+
+      .help {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .input {
+        width: 100%;
+        padding: 12px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        outline: none;
+      }
+      .input:focus {
+        box-shadow: var(--ring);
+        border-color: rgba(126, 155, 255, 0.45);
+      }
+
+      .segmented {
+        display: inline-flex;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 12px;
+        overflow: clip;
+        width: fit-content;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .segBtn {
+        border: none;
+        background: transparent;
+        color: var(--text);
+        padding: 10px 12px;
+        cursor: pointer;
+        font-weight: 650;
+        font-size: 13px;
+      }
+      .segBtn:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .segBtn.isActive {
+        background: rgba(126, 155, 255, 0.22);
+      }
+
+      .history {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .historyItem {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      }
+      .historyItem:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.22);
+      }
+      .historyItem:focus-visible {
+        outline: none;
+        box-shadow: var(--ring);
+      }
+
+      .historyMeta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .historyTitle {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .historyEmpty {
+        padding: 10px 6px 2px;
+      }
+
+      .footer {
+        margin-top: 14px;
+        text-align: center;
+        font-size: 12px;
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+        pointer-events: none;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(20, 22, 38, 0.92);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+        color: var(--text);
+        font-size: 13px;
+        transition: opacity 160ms ease, transform 160ms ease;
+      }
+      .toast.isOn {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0px);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn,
+        .historyItem,
+        .rowCopy {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg"></div>
+    <main class="wrap">
+      <header>
+        <div class="badge">Lotto 6/45</div>
+        <h1 class="title">로또 번호 랜덤 추천 (단일 HTML)</h1>
+        <p class="subtitle">
+          1~45 중 <strong>6개 + 보너스 1개</strong>를 중복 없이 추천해요. (6개는 오름차순)
+        </p>
+      </header>
+
+      <section class="card" aria-label="추천 결과">
+        <div class="cardTop">
+          <h2 class="cardTitle">이번 추천</h2>
+          <div class="rightActions">
+            <button id="btnCopy" class="btn btnGhost" type="button" disabled>복사</button>
+          </div>
+        </div>
+
+        <div id="balls" class="balls" aria-live="polite" aria-atomic="true">
+          <div class="muted">아래 버튼을 눌러 번호를 추천받아보세요.</div>
+        </div>
+
+        <div class="controls">
+          <button id="btnGenerate" class="btn btnPrimary" type="button">번호 추천</button>
+          <button id="btnRegenerate" class="btn" type="button" disabled>다시 추천</button>
+          <button id="btnReset" class="btn btnGhost" type="button" disabled>초기화</button>
+        </div>
+
+        <details class="details">
+          <summary>옵션</summary>
+          <div class="options">
+            <label class="field">
+              <span class="fieldLabel">자동 생성 개수</span>
+              <div class="segmented" role="group" aria-label="자동 생성 개수">
+                <button class="segBtn isActive" data-count="1" type="button">1게임</button>
+                <button class="segBtn" data-count="3" type="button">3게임</button>
+                <button class="segBtn" data-count="5" type="button">5게임</button>
+              </div>
+              <p class="help">한 번에 여러 게임(세트)도 만들 수 있어요.</p>
+            </label>
+
+            <label class="field">
+              <span class="fieldLabel">제외할 번호 (쉼표로 구분)</span>
+              <input
+                id="excludeInput"
+                class="input"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="예: 7, 13, 25"
+                aria-describedby="excludeHelp"
+              />
+              <p id="excludeHelp" class="help">
+                1~45 사이만 인식해요. 보너스까지 뽑으므로 최대 38개까지 제외 가능.
+              </p>
+            </label>
+
+            <label class="field">
+              <span class="fieldLabel">고정할 번호 (쉼표로 구분)</span>
+              <input
+                id="fixedInput"
+                class="input"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="예: 1, 2"
+                aria-describedby="fixedHelp"
+              />
+              <p id="fixedHelp" class="help">
+                1~45 사이만 인식해요. 고정 번호는 각 게임에 항상 포함됩니다.
+              </p>
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <section class="card" aria-label="히스토리">
+        <div class="cardTop">
+          <h2 class="cardTitle">히스토리</h2>
+          <div class="rightActions">
+            <button id="btnCopyAll" class="btn btnGhost" type="button" disabled>전체 복사</button>
+            <button id="btnClearHistory" class="btn btnGhost" type="button" disabled>비우기</button>
+          </div>
+        </div>
+
+        <ol id="history" class="history" aria-live="polite"></ol>
+        <div id="historyEmpty" class="historyEmpty">
+          <span class="muted">아직 기록이 없어요.</span>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span class="muted">팁: 히스토리는 클릭하면 복사돼요. (클립보드 권한 필요)</span>
+      </footer>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+      <span id="toastText"></span>
+    </div>
+
+    <script>
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      const btnGenerate = $("#btnGenerate");
+      const btnRegenerate = $("#btnRegenerate");
+      const btnReset = $("#btnReset");
+      const btnCopy = $("#btnCopy");
+      const btnCopyAll = $("#btnCopyAll");
+      const btnClearHistory = $("#btnClearHistory");
+      const excludeInput = $("#excludeInput");
+      const fixedInput = $("#fixedInput");
+
+      const ballsEl = $("#balls");
+      const historyEl = $("#history");
+      const historyEmptyEl = $("#historyEmpty");
+      const toastEl = $("#toast");
+      const toastTextEl = $("#toastText");
+
+      const STORAGE_KEY = "lotto_html_history_v1";
+
+      const STATE = {
+        count: 1,
+        lastSets: null,
+        history: [],
+      };
+
+      function showToast(text) {
+        toastTextEl.textContent = text;
+        toastEl.classList.add("isOn");
+        window.clearTimeout(showToast._t);
+        showToast._t = window.setTimeout(() => toastEl.classList.remove("isOn"), 1400);
+      }
+      showToast._t = 0;
+
+      function nowStamp() {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mi = String(d.getMinutes()).padStart(2, "0");
+        const ss = String(d.getSeconds()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+      }
+
+      function uid() {
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+      }
+
+      function parseCsvNumbers(raw) {
+        const s = String(raw ?? "").trim();
+        if (!s) return new Set();
+        const tokens = s
+          .split(/[,\s]+/g)
+          .map((t) => t.trim())
+          .filter(Boolean);
+        const out = new Set();
+        for (const t of tokens) {
+          const n = Number(t);
+          if (!Number.isFinite(n)) continue;
+          const i = Math.floor(n);
+          if (i < 1 || i > 45) continue;
+          out.add(i);
+        }
+        return out;
+      }
+
+      function ballClassByNumber(n) {
+        if (n <= 10) return "is0";
+        if (n <= 20) return "is1";
+        if (n <= 30) return "is2";
+        if (n <= 40) return "is3";
+        return "is4";
+      }
+
+      // 0..(maxExclusive-1) 균등 난수 (rejection sampling)
+      function cryptoRandInt(maxExclusive) {
+        if (maxExclusive <= 0) throw new Error("maxExclusive는 1 이상이어야 합니다.");
+        const range = 0x100000000; // 2^32
+        const limit = range - (range % maxExclusive);
+        const buf = new Uint32Array(1);
+        while (true) {
+          crypto.getRandomValues(buf);
+          const x = buf[0];
+          if (x < limit) return x % maxExclusive;
+        }
+      }
+
+      function shuffleInPlace(arr) {
+        for (let i = arr.length - 1; i > 0; i -= 1) {
+          const j = cryptoRandInt(i + 1);
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      function pickMainAndBonus({ excludedSet, fixedSet }) {
+        const conflict = [...fixedSet].filter((n) => excludedSet.has(n));
+        if (conflict.length) throw new Error(`고정번호와 제외번호가 겹칩니다: ${conflict.join(", ")}`);
+        if (fixedSet.size > 6) throw new Error("고정번호는 최대 6개까지 가능해요.");
+
+        if (excludedSet.size > 38) {
+          throw new Error("보너스 포함이라 제외 번호는 최대 38개까지만 가능해요.");
+        }
+
+        const pool = [];
+        for (let i = 1; i <= 45; i += 1) {
+          if (excludedSet.has(i)) continue;
+          if (fixedSet.has(i)) continue;
+          pool.push(i);
+        }
+
+        const needMain = 6 - fixedSet.size;
+        const needTotal = needMain + 1; // 보너스
+        if (pool.length < needTotal) {
+          throw new Error("제외/고정 번호가 너무 많아서 (6개 + 보너스 1개)를 뽑을 수 없어요.");
+        }
+
+        // 풀을 섞고 앞에서 필요한 만큼만 사용
+        shuffleInPlace(pool);
+        const extra = pool.slice(0, needTotal);
+
+        const bonus = extra[extra.length - 1];
+        const main = [...fixedSet, ...extra.slice(0, needMain)].sort((a, b) => a - b);
+        return { main, bonus };
+      }
+
+      function generateSets(count, excludedSet, fixedSet) {
+        const sets = [];
+        for (let i = 0; i < count; i += 1) {
+          sets.push(pickMainAndBonus({ excludedSet, fixedSet }));
+        }
+        return sets;
+      }
+
+      function formatLine(set) {
+        return `${set.main.join(", ")} + ${set.bonus}`;
+      }
+
+      function formatSets(sets) {
+        return sets.map((s, i) => `${i + 1}게임: ${formatLine(s)}`).join("\n");
+      }
+
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.top = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+      }
+
+      function renderCurrent(sets) {
+        ballsEl.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.className = "ballsGrid";
+
+        sets.forEach((set, idx) => {
+          const row = document.createElement("div");
+          row.className = "ballRow";
+
+          const setEl = document.createElement("div");
+          setEl.className = "ballSet";
+
+          set.main.forEach((n) => {
+            const b = document.createElement("div");
+            b.className = `ball ${ballClassByNumber(n)}`;
+            b.textContent = String(n);
+            setEl.appendChild(b);
+          });
+
+          const sep = document.createElement("span");
+          sep.className = "ballSep";
+          sep.textContent = "+";
+          sep.setAttribute("aria-hidden", "true");
+          setEl.appendChild(sep);
+
+          const bonusBall = document.createElement("div");
+          bonusBall.className = `ball ballBonus ${ballClassByNumber(set.bonus)}`;
+          bonusBall.textContent = String(set.bonus);
+          bonusBall.title = "보너스";
+          bonusBall.setAttribute("aria-label", `보너스 ${set.bonus}`);
+          setEl.appendChild(bonusBall);
+
+          const meta = document.createElement("div");
+          meta.className = "rowMeta";
+
+          const tag = document.createElement("span");
+          tag.className = "rowTag";
+          tag.textContent = `${idx + 1}게임`;
+
+          const copy = document.createElement("button");
+          copy.type = "button";
+          copy.className = "rowCopy";
+          copy.textContent = "줄 복사";
+          copy.addEventListener("click", async () => {
+            await copyText(formatLine(set));
+            showToast("복사했어요");
+          });
+
+          meta.appendChild(tag);
+          meta.appendChild(copy);
+
+          row.appendChild(setEl);
+          row.appendChild(meta);
+          grid.appendChild(row);
+        });
+
+        ballsEl.appendChild(grid);
+      }
+
+      function setButtonsEnabled(isReady) {
+        btnRegenerate.disabled = !isReady;
+        btnReset.disabled = !isReady;
+        btnCopy.disabled = !isReady;
+      }
+
+      function saveHistory() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE.history));
+        } catch {
+          // 저장 실패는 무시
+        }
+      }
+
+      function loadHistory() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) return [];
+          return parsed;
+        } catch {
+          return [];
+        }
+      }
+
+      function renderHistory() {
+        historyEl.innerHTML = "";
+
+        if (STATE.history.length === 0) {
+          historyEmptyEl.style.display = "block";
+          btnCopyAll.disabled = true;
+          btnClearHistory.disabled = true;
+          return;
+        }
+
+        historyEmptyEl.style.display = "none";
+        btnCopyAll.disabled = false;
+        btnClearHistory.disabled = false;
+
+        for (const item of STATE.history) {
+          const li = document.createElement("li");
+          const box = document.createElement("div");
+          box.className = "historyItem";
+          box.tabIndex = 0;
+          box.setAttribute("role", "button");
+          box.setAttribute("aria-label", `기록 복사: ${item.at}`);
+
+          const meta = document.createElement("div");
+          meta.className = "historyMeta";
+
+          const title = document.createElement("div");
+          title.className = "historyTitle";
+          title.textContent = item.at;
+
+          const hint = document.createElement("div");
+          hint.className = "historyTitle";
+          hint.textContent = `총 ${item.sets.length}게임 • 클릭하면 복사`;
+
+          meta.appendChild(title);
+          meta.appendChild(hint);
+
+          box.appendChild(meta);
+
+          const onCopy = async () => {
+            await copyText(formatSets(item.sets));
+            showToast("기록을 복사했어요");
+          };
+          box.addEventListener("click", onCopy);
+          box.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") onCopy();
+          });
+
+          li.appendChild(box);
+          historyEl.appendChild(li);
+        }
+      }
+
+      function doReset() {
+        STATE.lastSets = null;
+        ballsEl.innerHTML = `<div class="muted">아래 버튼을 눌러 번호를 추천받아보세요.</div>`;
+        setButtonsEnabled(false);
+      }
+
+      function doGenerate() {
+        const excluded = parseCsvNumbers(excludeInput.value);
+        const fixed = parseCsvNumbers(fixedInput.value);
+
+        const sets = generateSets(STATE.count, excluded, fixed);
+        STATE.lastSets = sets;
+
+        renderCurrent(sets);
+        setButtonsEnabled(true);
+
+        STATE.history.unshift({ id: uid(), at: nowStamp(), sets });
+        STATE.history = STATE.history.slice(0, 20);
+        saveHistory();
+        renderHistory();
+        showToast("번호 추천 완료");
+      }
+
+      function wireCountSegment() {
+        $$(".segBtn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            $$(".segBtn").forEach((b) => b.classList.remove("isActive"));
+            btn.classList.add("isActive");
+            STATE.count = Number(btn.dataset.count || "1");
+            showToast(`${STATE.count}게임 설정`);
+          });
+        });
+      }
+
+      function wireActions() {
+        btnGenerate.addEventListener("click", () => {
+          try {
+            doGenerate();
+          } catch (e) {
+            alert(e?.message || "생성에 실패했어요.");
+          }
+        });
+
+        btnRegenerate.addEventListener("click", () => {
+          try {
+            doGenerate();
+          } catch (e) {
+            alert(e?.message || "생성에 실패했어요.");
+          }
+        });
+
+        btnReset.addEventListener("click", () => {
+          doReset();
+          showToast("초기화했어요");
+        });
+
+        btnCopy.addEventListener("click", async () => {
+          if (!STATE.lastSets) return;
+          await copyText(formatSets(STATE.lastSets));
+          showToast("복사했어요");
+        });
+
+        btnCopyAll.addEventListener("click", async () => {
+          if (STATE.history.length === 0) return;
+          const text = STATE.history.map((h) => `${h.at}\n${formatSets(h.sets)}`).join("\n\n");
+          await copyText(text);
+          showToast("전체 히스토리를 복사했어요");
+        });
+
+        btnClearHistory.addEventListener("click", () => {
+          STATE.history = [];
+          saveHistory();
+          renderHistory();
+          showToast("히스토리를 비웠어요");
+        });
+      }
+
+      function init() {
+        STATE.history = loadHistory().slice(0, 20);
+        wireCountSegment();
+        wireActions();
+        renderHistory();
+        doReset();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
